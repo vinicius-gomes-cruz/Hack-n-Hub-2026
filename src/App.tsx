@@ -53,6 +53,7 @@ const notices = [
 
 const submissions = [
   { id: 'CM-2026-0841', applicant: 'Marina de Souza', proposal: 'Corpo-território: dança nas praças', notice: 'Cultura em Movimento 2026', date: '05 set, 14h20', documents: '3 de 3', status: 'Em análise' },
+  { id: 'CM-2026-0842', applicant: 'Pedro Henrique Alves', proposal: 'Oficina de lambe-lambe', notice: 'Cultura em Movimento 2026', date: '05 set, 15h08', documents: '3 de 3', status: 'Em análise' },
   { id: 'PA-2026-0317', applicant: 'Coletivo Roda Viva', proposal: 'Sons da feira livre', notice: 'Palco Aberto', date: '05 set, 10h42', documents: '3 de 3', status: 'Em análise' },
   { id: 'MV-2026-0098', applicant: 'João Augusto Lima', proposal: 'Memórias da Vila Esperança', notice: 'Memória Viva', date: '04 set, 16h08', documents: '3 de 3', status: 'Inscrição inválida' },
   { id: 'AP-2026-0142', applicant: 'Ateliê Horizonte', proposal: 'Cores do encontro', notice: 'Arte na Praça', date: '03 set, 09h15', documents: '3 de 3', status: 'Validada' },
@@ -64,9 +65,17 @@ const artistSubmissions = [
   { id: 'MV-2026-0098', notice: 'Memória Viva', proposal: 'Memórias da Vila Esperança', submittedAt: '04 de agosto de 2026', submittedMonth: 'agosto', status: 'Inscrição inválida', documents: ['RG_Joao_Augusto.pdf', 'Contrato_de_aluguel.pdf', 'Portfolio_Memorias.pdf'], message: 'A inscrição foi invalidada porque o arquivo enviado como comprovante de residência era um contrato de aluguel sem comprovação de endereço do proponente.' },
 ];
 
+const reviewAssignments = [
+  { id: 'AP-2026-0142', proposal: 'Cores do encontro', notice: 'Arte na Praça', applicant: 'Ateliê Horizonte', area: 'Artes visuais', submittedAt: '03 de setembro de 2026', status: 'Aguardando parecer' },
+  { id: 'CM-2026-0763', proposal: 'Cartografias afetivas', notice: 'Cultura em Movimento 2026', applicant: 'Larissa Monteiro', area: 'Artes cênicas', submittedAt: '02 de setembro de 2026', status: 'Aguardando parecer' },
+  { id: 'PA-2026-0281', proposal: 'Orquestra na comunidade', notice: 'Palco Aberto', applicant: 'Instituto Som da Rua', area: 'Música', submittedAt: '01 de setembro de 2026', status: 'Parecer concluído' },
+];
+
 function App() {
-  const [activeView, setActiveView] = useState<'agenda' | 'editais' | 'criar-edital' | 'administracao' | 'revisar-inscricao' | 'minhas-inscricoes'>('agenda');
+  const [activeView, setActiveView] = useState<'agenda' | 'editais' | 'criar-edital' | 'administracao' | 'revisar-inscricao' | 'minhas-inscricoes' | 'parecerista' | 'documentos-edital'>('agenda');
   const [selectedNotice, setSelectedNotice] = useState<(typeof notices)[number] | null>(null);
+  const [selectedNoticeDocuments, setSelectedNoticeDocuments] = useState<(typeof notices)[number] | null>(null);
+  const [attachmentDialogOpen, setAttachmentDialogOpen] = useState(false);
   const [selectedSubmission, setSelectedSubmission] = useState<(typeof submissions)[number] | null>(null);
   const [submissionStep, setSubmissionStep] = useState<1 | 2>(1);
   const [submittedNotices, setSubmittedNotices] = useState<Record<string, boolean>>({});
@@ -78,6 +87,10 @@ function App() {
   const [selectedArtistSubmission, setSelectedArtistSubmission] = useState<(typeof artistSubmissions)[number] | null>(null);
   const [artistDateFilter, setArtistDateFilter] = useState('todos');
   const [artistStatusFilter, setArtistStatusFilter] = useState('todos');
+  const [selectedAssignment, setSelectedAssignment] = useState<(typeof reviewAssignments)[number] | null>(null);
+  const [completedReviews, setCompletedReviews] = useState<Record<string, boolean>>({});
+  const [loginOpen, setLoginOpen] = useState(false);
+  const [expandedSubmissionNotice, setExpandedSubmissionNotice] = useState<string | null>(null);
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -118,6 +131,68 @@ function App() {
     }
   }
 
+  function renderNavigation(activeItem: string) {
+    return (
+      <nav aria-label="Navegação principal">
+        <button className={activeItem === 'agenda' ? 'nav-active' : ''} type="button" onClick={() => setActiveView('agenda')}>Agenda</button>
+        <button className={activeItem === 'editais' ? 'nav-active' : ''} type="button" onClick={() => { setSelectedNotice(null); setActiveView('editais'); }}>Editais</button>
+        <button className={activeItem === 'minhas-inscricoes' ? 'nav-active' : ''} type="button" onClick={() => setActiveView('minhas-inscricoes')}>Minhas inscrições</button>
+        <button className={activeItem === 'administracao' ? 'nav-active' : ''} type="button" onClick={() => setActiveView('administracao')}>Submissões</button>
+        <button className={activeItem === 'parecerista' ? 'nav-active' : ''} type="button" onClick={() => setActiveView('parecerista')}>Avaliações</button>
+      </nav>
+    );
+  }
+
+  function renderLoginControl() {
+    return (
+      <div className="login-control">
+        <button className="calendar-button" type="button" onClick={() => setLoginOpen(!loginOpen)} aria-expanded={loginOpen}>Login</button>
+        {loginOpen && <form className="login-popover" onSubmit={(event) => { event.preventDefault(); setLoginOpen(false); }}>
+          <label>E-mail<input type="email" required placeholder="voce@email.com" autoComplete="email" /></label>
+          <label>Senha<input type="password" required placeholder="Sua senha" autoComplete="current-password" /></label>
+          <button type="submit">Entrar</button>
+        </form>}
+      </div>
+    );
+  }
+
+  function renderBrand() {
+    return <img className="brand-logo" src="/cultura-mais-logo.svg" alt="Cultura Mais" />;
+  }
+
+  if (activeView === 'documentos-edital' && selectedNoticeDocuments) {
+    const documents = [
+      { type: 'Edital', title: `Edital ${selectedNoticeDocuments.title}`, file: 'edital_completo.pdf', date: '01 de setembro de 2026' },
+      { type: 'Errata', title: 'Errata nº 01', file: 'errata_01.pdf', date: '04 de setembro de 2026' },
+      { type: 'Anexo', title: 'Anexo I - Modelo de orçamento', file: 'anexo_orcamento.pdf', date: '01 de setembro de 2026' },
+    ];
+    return (
+      <main className="app-shell">
+        <header className="site-header"><button className="brand brand-button" type="button" onClick={() => setActiveView('agenda')} aria-label="Cultura Mais, início">{renderBrand()}</button>{renderNavigation('editais')}{renderLoginControl()}</header>
+        <section className="notice-documents-page" aria-labelledby="notice-documents-title">
+          <button className="back-button" type="button" onClick={() => setActiveView('editais')}>&larr; Voltar aos editais</button>
+          <div className="notice-documents-heading"><div><p className="eyebrow">Documentos do edital</p><h1 id="notice-documents-title">{selectedNoticeDocuments.title}</h1><p>Consulte o edital, atualizações e anexos publicados para esta oportunidade.</p></div><a className="details-button" href="#edital-completo">Ver edital completo <span aria-hidden="true">&rarr;</span></a></div>
+          <div className="notice-document-list">{documents.map((document) => <article className="notice-document" key={document.file}><span className={`document-type ${document.type.toLowerCase()}`}>{document.type}</span><div><h2>{document.title}</h2><p>{document.file} · Publicado em {document.date}</p></div><a className="review-button" href={`#${document.file}`}>Abrir PDF</a></article>)}</div>
+          <section className="notice-update-panel" aria-labelledby="update-title"><div><p className="eyebrow">Atualizar edital</p><h2 id="update-title">Adicionar documento</h2><p>Inclua uma errata, anexo ou comunicado. Esta ação é apenas demonstrativa.</p></div><div className="notice-update-actions"><label>Tipo do documento<select defaultValue="Errata"><option>Edital atualizado</option><option>Errata</option><option>Anexo</option><option>Comunicado</option></select></label><label className="upload-update">Selecionar arquivo<input type="file" accept=".pdf" /><span>PDF até 10 MB</span></label><button className="validate-button" type="button">Publicar atualização</button></div></section>
+        </section>
+      </main>
+    );
+  }
+
+  if (activeView === 'parecerista') {
+    return (
+      <main className="app-shell">
+        <header className="site-header"><button className="brand brand-button" type="button" onClick={() => setActiveView('agenda')} aria-label="Cultura Mais, início">{renderBrand()}</button>{renderNavigation('parecerista')}<button className="user-profile" type="button" aria-label="Perfil de Camila Nunes, parecerista"><span className="user-avatar">CN</span><span><strong>Camila Nunes</strong><small>Parecerista</small></span></button></header>
+        <section className="reviewer-page" aria-labelledby="reviewer-title">
+          <div className="reviewer-heading"><div><p className="eyebrow">Área do parecerista</p><h1 id="reviewer-title">Avaliação de mérito</h1><p>Analise as propostas que já tiveram a documentação validada.</p></div><div className="reviewer-progress"><strong>{reviewAssignments.filter((assignment) => completedReviews[assignment.id] || assignment.status === 'Parecer concluído').length} de {reviewAssignments.length}</strong><span>pareceres concluídos</span></div></div>
+          {selectedAssignment ? (
+            <section className="merit-review" aria-labelledby="merit-title"><button className="back-button" type="button" onClick={() => setSelectedAssignment(null)}>&larr; Voltar às propostas</button><div className="merit-title"><div><p className="eyebrow">{selectedAssignment.notice} · {selectedAssignment.id}</p><h2 id="merit-title">{selectedAssignment.proposal}</h2><p>{selectedAssignment.applicant} · {selectedAssignment.area}</p></div><span className="documents-approved">Documentação validada</span></div><div className="merit-layout"><article className="proposal-overview"><h3>Apresentação da proposta</h3><p>Proposta artística voltada à ampliação do acesso cultural, com realização em espaços públicos e participação de artistas locais. O plano apresenta atividades, público-alvo e contrapartidas para a comunidade.</p><h3>Materiais para análise</h3><div className="review-material"><span>PDF</span><strong>Projeto completo.pdf</strong><button className="file-preview-button" type="button">Ver arquivo</button></div><div className="review-material"><span>PDF</span><strong>Portfólio artístico.pdf</strong><button className="file-preview-button" type="button">Ver arquivo</button></div></article><form className="merit-form"><p className="eyebrow">Seu parecer</p><h3>Critérios de avaliação</h3><label>Qualidade artística e relevância cultural <select defaultValue=""><option value="" disabled>Atribua uma nota de 0 a 10</option><option>10 - Excelente</option><option>8 - Muito bom</option><option>6 - Adequado</option><option>4 - Insuficiente</option></select></label><label>Viabilidade de execução <select defaultValue=""><option value="" disabled>Atribua uma nota de 0 a 10</option><option>10 - Excelente</option><option>8 - Muito bom</option><option>6 - Adequado</option><option>4 - Insuficiente</option></select></label><label>Impacto e acesso público <select defaultValue=""><option value="" disabled>Atribua uma nota de 0 a 10</option><option>10 - Excelente</option><option>8 - Muito bom</option><option>6 - Adequado</option><option>4 - Insuficiente</option></select></label><label>Parecer descritivo *<textarea required rows={6} placeholder="Registre os fundamentos da sua avaliação." /></label><div className="merit-actions"><button className="review-button" type="button" onClick={() => setSelectedAssignment(null)}>Salvar rascunho</button><button className="validate-button" type="button" onClick={() => { setCompletedReviews({ ...completedReviews, [selectedAssignment.id]: true }); setSelectedAssignment(null); }}>Concluir parecer</button></div></form></div></section>
+          ) : <div className="assignment-list">{reviewAssignments.map((assignment) => { const finished = completedReviews[assignment.id] || assignment.status === 'Parecer concluído'; return <article className="assignment-card" key={assignment.id}><div><p className="event-category">{assignment.notice}</p><h2>{assignment.proposal}</h2><p>{assignment.applicant} · {assignment.area}</p><span>{assignment.id} · Documentação validada em {assignment.submittedAt}</span></div><div className="assignment-action"><span className={finished ? 'assignment-done' : ''}>{finished ? 'Parecer concluído' : 'Aguardando parecer'}</span><button className="details-button" type="button" onClick={() => setSelectedAssignment(assignment)}>{finished ? 'Ver parecer' : 'Avaliar proposta'} <span aria-hidden="true">&rarr;</span></button></div></article>; })}</div>}
+        </section>
+      </main>
+    );
+  }
+
   if (activeView === 'minhas-inscricoes') {
     const filteredArtistSubmissions = artistSubmissions.filter((submission) => (
       (artistDateFilter === 'todos' || submission.submittedMonth === artistDateFilter)
@@ -126,7 +201,7 @@ function App() {
 
     return (
       <main className="app-shell">
-        <header className="site-header"><button className="brand brand-button" type="button" onClick={() => setActiveView('agenda')} aria-label="Cultura em movimento, início"><span className="brand-mark">C</span><span>Cultura<br />em movimento</span></button><nav aria-label="Navegação principal"><button type="button" onClick={() => setActiveView('agenda')}>Agenda</button><button type="button" onClick={() => setActiveView('editais')}>Editais</button><button className="nav-active" type="button">Minhas inscrições</button><button type="button" onClick={() => setActiveView('administracao')}>Administração</button></nav><button className="calendar-button" type="button" onClick={() => setActiveView('editais')}>Ver editais</button></header>
+        <header className="site-header"><button className="brand brand-button" type="button" onClick={() => setActiveView('agenda')} aria-label="Cultura Mais, início">{renderBrand()}</button>{renderNavigation('minhas-inscricoes')}<button className="user-profile" type="button" aria-label="Perfil de Marina Souza, usuário comum"><span className="user-avatar">MS</span><span><strong>Marina Souza</strong><small>Usuário comum</small></span></button></header>
         <section className="artist-submissions-page" aria-labelledby="artist-submissions-title">
           <div className="artist-heading"><p className="eyebrow">Área do artista</p><h1 id="artist-submissions-title">Minhas inscrições</h1><p>Acompanhe o andamento das propostas que você enviou para os editais.</p></div>
           <div className="artist-summary"><div><strong>3</strong><span>inscrições enviadas</span></div><div><strong>1</strong><span>em análise</span></div><div><strong>1</strong><span>validada</span></div><div><strong>1</strong><span>inválida</span></div></div>
@@ -154,7 +229,7 @@ function App() {
     ];
     return (
       <main className="app-shell">
-        <header className="site-header"><button className="brand brand-button" type="button" onClick={() => setActiveView('agenda')} aria-label="Cultura em movimento, início"><span className="brand-mark">C</span><span>Cultura<br />em movimento</span></button><nav aria-label="Navegação principal"><button type="button" onClick={() => setActiveView('agenda')}>Agenda</button><button type="button" onClick={() => setActiveView('editais')}>Editais</button><button className="nav-active" type="button" onClick={() => setActiveView('administracao')}>Administração</button></nav><button className="calendar-button" type="button" onClick={() => setActiveView('administracao')}>Submissões</button></header>
+        <header className="site-header"><button className="brand brand-button" type="button" onClick={() => setActiveView('agenda')} aria-label="Cultura Mais, início">{renderBrand()}</button>{renderNavigation('administracao')}<button className="user-profile" type="button" aria-label="Perfil de Rafael Mendes, analista"><span className="user-avatar">RM</span><span><strong>Rafael Mendes</strong><small>Analista</small></span></button></header>
         <section className="review-page" aria-labelledby="review-title">
           <div className="review-title"><button className="back-button" type="button" onClick={() => setActiveView('administracao')}>&larr; Voltar às submissões</button><p className="eyebrow">Revisão de inscrição</p><h1 id="review-title">{selectedSubmission.proposal}</h1><p>{selectedSubmission.id} · Recebida em {selectedSubmission.date}</p></div>
           <aside className="review-summary"><span className={`submission-status ${status === 'Validada' ? 'validated' : status === 'Inscrição inválida' ? 'invalidated' : ''}`}>{status}</span><strong>{selectedSubmission.notice}</strong><span>Proponente: {selectedSubmission.applicant}</span></aside>
@@ -170,28 +245,48 @@ function App() {
   }
 
   if (activeView === 'administracao') {
+    const submissionsByNotice = submissions.reduce<Record<string, typeof submissions>>((groups, submission) => {
+      const noticeSubmissions = groups[submission.notice] || [];
+      groups[submission.notice] = [...noticeSubmissions, submission];
+      return groups;
+    }, {});
+
     return (
       <main className="app-shell">
         <header className="site-header">
-          <button className="brand brand-button" type="button" onClick={() => setActiveView('agenda')} aria-label="Cultura em movimento, início"><span className="brand-mark">C</span><span>Cultura<br />em movimento</span></button>
-          <nav aria-label="Navegação principal"><button type="button" onClick={() => setActiveView('agenda')}>Agenda</button><button type="button" onClick={() => setActiveView('editais')}>Editais</button><button type="button" onClick={() => setActiveView('minhas-inscricoes')}>Minhas inscrições</button><button className="nav-active" type="button">Administração</button></nav>
-          <button className="calendar-button" type="button" onClick={() => setActiveView('editais')}>Ver editais</button>
+          <button className="brand brand-button" type="button" onClick={() => setActiveView('agenda')} aria-label="Cultura Mais, início">{renderBrand()}</button>
+          {renderNavigation('administracao')}
+          <button className="user-profile" type="button" aria-label="Perfil de Rafael Mendes, analista">
+            <span className="user-avatar">RM</span>
+            <span><strong>Rafael Mendes</strong><small>Analista</small></span>
+          </button>
         </header>
         <section className="admin-page" aria-labelledby="admin-title">
           <div className="admin-heading"><div><p className="eyebrow">Área administrativa</p><h1 id="admin-title">Submissões dos editais</h1><p>Revise documentos e valide as propostas recebidas.</p></div><button className="export-button" type="button">Exportar lista</button></div>
           <div className="admin-stats" aria-label="Resumo das submissões"><div><strong>28</strong><span>submissões recebidas</span></div><div><strong>11</strong><span>aguardando validação</span></div><div><strong>4</strong><span>inscrições inválidas</span></div><div><strong>13</strong><span>validadas</span></div></div>
           <div className="submission-toolbar"><div className="submission-filters"><button className="filter active" type="button">Todas</button><button className="filter" type="button">Em análise</button><button className="filter" type="button">Inválidas</button><button className="filter" type="button">Validadas</button></div><label className="search-field">Buscar<input type="search" placeholder="Nome ou protocolo" /></label></div>
-          <div className="submission-list">
-            <div className="submission-list-head"><span>Proponente e proposta</span><span>Edital</span><span>Documentos</span><span>Status</span><span>Ação</span></div>
-            {submissions.map((submission) => {
-              const status = validationStatus[submission.id] || submission.status;
-              return <article className="submission-row" key={submission.id}>
-                <div className="submission-main"><strong>{submission.applicant}</strong><span>{submission.proposal}</span><small>{submission.id} · {submission.date}</small></div>
-                <span className="submission-notice">{submission.notice}</span>
-                <span className={submission.documents === '3 de 3' ? 'documents-complete' : 'documents-missing'}>{submission.documents}</span>
-                <span className={`submission-status ${status === 'Validada' ? 'validated' : status === 'Inscrição inválida' ? 'invalidated' : ''}`}>{status}</span>
-                <div className="submission-actions"><button type="button" className="review-button" onClick={() => { setSelectedSubmission(submission); setActiveView('revisar-inscricao'); }}>Ver inscrição</button>{status === 'Em análise' && <button type="button" className="validate-button" onClick={() => setValidationStatus({ ...validationStatus, [submission.id]: 'Validada' })}>Validar</button>}</div>
-              </article>;
+          <div className="submission-groups">
+            {Object.entries(submissionsByNotice).map(([notice, noticeSubmissions]) => {
+              const groupId = `group-${notice.replace(/[^a-z0-9]/gi, '-')}`;
+              const isExpanded = expandedSubmissionNotice === notice;
+              return <section className="submission-group" key={notice} aria-labelledby={groupId}>
+              <button className="submission-group-heading" type="button" onClick={() => setExpandedSubmissionNotice(isExpanded ? null : notice)} aria-expanded={isExpanded} aria-controls={`${groupId}-content`}>
+                <span><span className="eyebrow">Edital</span><strong id={groupId}>{notice}</strong></span><span>{noticeSubmissions.length} inscrição{noticeSubmissions.length === 1 ? '' : 'ões'} <b aria-hidden="true">{isExpanded ? '−' : '+'}</b></span>
+              </button>
+              {isExpanded && <div className="submission-list" id={`${groupId}-content`}>
+                <div className="submission-list-head"><span>Proponente e proposta</span><span>Edital</span><span>Documentos</span><span>Status</span><span>Ação</span></div>
+                {noticeSubmissions.map((submission) => {
+                  const status = validationStatus[submission.id] || submission.status;
+                  return <article className="submission-row" key={submission.id}>
+                    <div className="submission-main"><strong>{submission.applicant}</strong><span>{submission.proposal}</span><small>{submission.id} · {submission.date}</small></div>
+                    <span className="submission-notice">{submission.notice}</span>
+                    <span className={submission.documents === '3 de 3' ? 'documents-complete' : 'documents-missing'}>{submission.documents}</span>
+                    <span className={`submission-status ${status === 'Validada' ? 'validated' : status === 'Inscrição inválida' ? 'invalidated' : ''}`}>{status}</span>
+                    <div className="submission-actions"><button type="button" className="review-button" onClick={() => { setSelectedSubmission(submission); setActiveView('revisar-inscricao'); }}>Ver inscrição</button>{status === 'Em análise' && <button type="button" className="validate-button" onClick={() => setValidationStatus({ ...validationStatus, [submission.id]: 'Validada' })}>Validar</button>}</div>
+                  </article>;
+                })}
+              </div>}
+            </section>;
             })}
           </div>
         </section>
@@ -203,9 +298,9 @@ function App() {
     return (
       <main className="app-shell">
         <header className="site-header">
-          <button className="brand brand-button" type="button" onClick={() => setActiveView('agenda')} aria-label="Cultura em movimento, início"><span className="brand-mark">C</span><span>Cultura<br />em movimento</span></button>
-          <nav aria-label="Navegação principal"><button type="button" onClick={() => setActiveView('agenda')}>Agenda</button><button className="nav-active" type="button" onClick={() => setActiveView('editais')}>Editais</button><button type="button" onClick={() => setActiveView('administracao')}>Administração</button></nav>
-          <button className="calendar-button" type="button" onClick={() => setActiveView('editais')}>Ver editais</button>
+          <button className="brand brand-button" type="button" onClick={() => setActiveView('agenda')} aria-label="Cultura Mais, início">{renderBrand()}</button>
+          {renderNavigation('criar-edital')}
+          {renderLoginControl()}
         </header>
         <section className="create-notice-page" aria-labelledby="create-notice-title">
           <div className="create-notice-intro">
@@ -243,9 +338,9 @@ function App() {
     return (
       <main className="app-shell">
         <header className="site-header">
-          <button className="brand brand-button" type="button" onClick={() => setActiveView('agenda')} aria-label="Cultura em movimento, início"><span className="brand-mark">C</span><span>Cultura<br />em movimento</span></button>
-          <nav aria-label="Navegação principal"><button type="button" onClick={() => setActiveView('agenda')}>Agenda</button><button className="nav-active" type="button">Editais</button><button type="button" onClick={() => setActiveView('administracao')}>Administração</button></nav>
-          <button className="calendar-button" type="button" onClick={() => setActiveView('agenda')}>Ver agenda</button>
+          <button className="brand brand-button" type="button" onClick={() => setActiveView('agenda')} aria-label="Cultura Mais, início">{renderBrand()}</button>
+          {renderNavigation('editais')}
+          {renderLoginControl()}
         </header>
         <section className="notices-page" aria-labelledby="notices-title">
           <div className="notices-heading">
@@ -259,11 +354,12 @@ function App() {
               <article className="notice-card" key={notice.id}>
                 <div className="notice-deadline"><strong>{notice.deadline.split(' ')[0]}</strong><span>{notice.deadline.split(' ')[1]}</span><small>encerra</small></div>
                 <div className="notice-info"><p className="event-category">{notice.category}</p><h2>{notice.title}</h2><p>{notice.description}</p></div>
-                <div className="notice-action"><span className={notice.status === 'Últimos dias' ? 'closing' : ''}>{notice.status}</span><strong>{notice.value}</strong><button className="details-button" type="button" onClick={() => { setSelectedNotice(notice); setSubmissionStep(1); setUploadedFiles({}); setDocumentsConfirmed(false); }}>{submittedNotices[notice.id] ? 'Inscrição enviada' : 'Inscrever-se'} <span aria-hidden="true">&rarr;</span></button></div>
+                <div className="notice-action"><span className={notice.status === 'Últimos dias' ? 'closing' : ''}>{notice.status}</span><strong>{notice.value}</strong><div className="notice-buttons"><button className="review-button" type="button" onClick={() => { setSelectedNoticeDocuments(notice); setAttachmentDialogOpen(false); }}>Visualizar</button><button className="review-button" type="button" onClick={() => { setSelectedNoticeDocuments(notice); setAttachmentDialogOpen(true); }}>Novo anexo</button><button className="details-button" type="button" onClick={() => { setSelectedNotice(notice); setSubmissionStep(1); setUploadedFiles({}); setDocumentsConfirmed(false); }}>{submittedNotices[notice.id] ? 'Inscrição enviada' : 'Inscrever-se'} <span aria-hidden="true">&rarr;</span></button></div></div>
               </article>
             ))}
           </div>
         </section>
+        {selectedNoticeDocuments && <div className="notice-dialog-backdrop" role="presentation" onClick={() => setSelectedNoticeDocuments(null)}><section className="notice-dialog" role="dialog" aria-modal="true" aria-labelledby="notice-dialog-title" onClick={(event) => event.stopPropagation()}><div className="notice-dialog-heading"><div><p className="eyebrow">{attachmentDialogOpen ? 'Atualizar edital' : 'Documentos do edital'}</p><h2 id="notice-dialog-title">{selectedNoticeDocuments.title}</h2></div><button className="dialog-close" type="button" onClick={() => setSelectedNoticeDocuments(null)} aria-label="Fechar">×</button></div>{attachmentDialogOpen ? <form className="notice-update-actions" onSubmit={(event) => { event.preventDefault(); setSelectedNoticeDocuments(null); }}><label>Tipo do documento<select defaultValue="Errata"><option>Edital atualizado</option><option>Errata</option><option>Anexo</option><option>Comunicado</option></select></label><label className="upload-update">Selecionar arquivo<input type="file" required accept=".pdf" /><span>PDF até 10 MB</span></label><div className="dialog-actions"><button className="review-button" type="button" onClick={() => setAttachmentDialogOpen(false)}>Voltar</button><button className="validate-button" type="submit">Publicar anexo</button></div></form> : <><p className="dialog-copy">Acesse os documentos e atualizações publicados para este edital.</p><div className="dialog-document-list"><a href="#edital-completo"><span>EDITAL</span><strong>Edital completo</strong><small>edital_completo.pdf</small></a><a href="#errata-01"><span>ERRATA</span><strong>Errata nº 01</strong><small>errata_01.pdf</small></a><a href="#anexo-orcamento"><span>ANEXO</span><strong>Anexo I - Modelo de orçamento</strong><small>anexo_orcamento.pdf</small></a></div><div className="dialog-actions"><button className="details-button" type="button" onClick={() => setSelectedNoticeDocuments(null)}>Fechar</button></div></>}</section></div>}
       </main>
     );
   }
@@ -272,16 +368,12 @@ function App() {
     return (
       <main className="app-shell">
         <header className="site-header">
-          <button className="brand brand-button" type="button" onClick={() => setActiveView('agenda')} aria-label="Cultura em movimento, início">
-            <span className="brand-mark">C</span>
-            <span>Cultura<br />em movimento</span>
+          <button className="brand brand-button" type="button" onClick={() => setActiveView('agenda')} aria-label="Cultura Mais, início">{renderBrand()}</button>
+          {renderNavigation('editais')}
+          <button className="user-profile" type="button" aria-label="Perfil de Marina Souza, usuário comum">
+            <span className="user-avatar">MS</span>
+            <span><strong>Marina Souza</strong><small>Usuário</small></span>
           </button>
-          <nav aria-label="Navegação principal">
-            <button type="button" onClick={() => setActiveView('agenda')}>Agenda</button>
-            <button className="nav-active" type="button" onClick={() => setSelectedNotice(null)}>Editais</button>
-            <button type="button" onClick={() => setActiveView('administracao')}>Administração</button>
-          </nav>
-          <button className="calendar-button" type="button" onClick={() => setActiveView('agenda')}>Ver agenda</button>
         </header>
 
         <section className="edital-page" aria-labelledby="edital-title">
@@ -388,17 +480,9 @@ function App() {
   return (
     <main className="app-shell">
       <header className="site-header">
-        <a className="brand" href="#inicio" aria-label="Cultura em movimento, início">
-          <span className="brand-mark">C</span>
-          <span>Cultura<br />em movimento</span>
-        </a>
-        <nav aria-label="Navegação principal">
-          <a className="nav-active" href="#agenda">Agenda</a>
-          <button type="button" onClick={() => { setSelectedNotice(null); setActiveView('editais'); }}>Editais</button>
-          <button type="button" onClick={() => setActiveView('minhas-inscricoes')}>Minhas inscrições</button>
-          <button type="button" onClick={() => setActiveView('administracao')}>Administração</button>
-        </nav>
-        <button className="calendar-button" type="button">Ver calendario</button>
+        <a className="brand" href="#inicio" aria-label="Cultura Mais, início">{renderBrand()}</a>
+        {renderNavigation('agenda')}
+        {renderLoginControl()}
       </header>
 
       <section className="hero" id="inicio" aria-labelledby="page-title">

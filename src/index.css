@@ -1,9 +1,9 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;500;600;700&display=swap');
 
 :root {
-  font-family: 'Space Grotesk', sans-serif;
-  color: #123342;
-  background: #e8f0eb;
+  font-family: 'Source Sans 3', sans-serif;
+  color: #1e293b;
+  background: #e2e7ed;
 }
 
 * {
@@ -11,6 +11,7 @@
 }
 
 body {
+  background: #e2e7ed;
   margin: 0;
   min-width: 320px;
 }
