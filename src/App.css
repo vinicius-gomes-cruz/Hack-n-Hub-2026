@@ -212,7 +212,7 @@ h3 {
 }
 
 @media (max-width: 800px) {
-  .site-header nav { display: none; }.calendar-button { font-size: 0.78rem; }.hero { align-items: start; flex-direction: column; padding: 3.5rem 0; }.date-stamp { margin: 2rem 0 0; }.featured-event { grid-template-columns: 1fr; }.featured-event > img { min-height: 300px; }.featured-content { padding: 2.5rem 1.6rem; }.event-grid { grid-template-columns: repeat(2, 1fr); }
+  .site-header nav { display: none; }.calendar-button { font-size: 0.78rem; }.hero { align-items: start; flex-direction: column; padding: 1.5rem 0; }.date-stamp { margin: 2rem 0 0; }.featured-event { grid-template-columns: 1fr; }.featured-event > img { min-height: 300px; }.featured-content { padding: 2.5rem 1.6rem; }.event-grid { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 480px) {
@@ -261,7 +261,7 @@ h3 {
 nav { gap: 1.35rem; } nav a, nav button, .section-heading a { color: #475569; font-size: 0.82rem; font-weight: 500; } .nav-active { border-bottom-color: #0f4c81; color: #0f4c81 !important; }
 .calendar-button, .validate-button { background: #0f4c81; border-radius: 4px; box-shadow: none; }.calendar-button:hover, .validate-button:hover { background: #0b3b65; }
 .details-button { background: #0f4c81; border-radius: 4px; color: #fff; }.details-button:hover { background: #0b3b65; }.details-button span { color: inherit; }
-.hero { padding: 4rem 0 3rem; }.hero h1, .notices-heading h1, .artist-heading h1, .admin-heading h1, .reviewer-heading h1, .create-notice-intro h1, .edital-intro h1 { color: #0f172a; font-family: 'Space Grotesk', sans-serif; font-weight: 600; letter-spacing: 0; line-height: 1.03; }.hero-copy, .notices-heading > p:last-child, .artist-heading > p:last-child, .admin-heading p:last-child, .reviewer-heading p:last-child { color: #64748b; }
+.hero { padding: 1.75rem 0 3rem; }.hero h1, .notices-heading h1, .artist-heading h1, .admin-heading h1, .reviewer-heading h1, .create-notice-intro h1, .edital-intro h1 { color: #0f172a; font-family: 'Space Grotesk', sans-serif; font-weight: 600; letter-spacing: 0; line-height: 1.03; }.hero-copy, .notices-heading > p:last-child, .artist-heading > p:last-child, .admin-heading p:last-child, .reviewer-heading p:last-child { color: #64748b; }
 .eyebrow, .event-category { color: #0f4c81; font-size: 0.68rem; letter-spacing: 0.07em; }.date-stamp { border-color: #cbd5e1; color: #475569; }
 .featured-event { background: #0f172a; border-radius: 6px; overflow: hidden; }.featured-content { padding: 3rem; }.featured-content .eyebrow { color: #93c5fd; }.featured-content .event-category { color: #cbd5e1; }.featured-content h2 { font-family: 'Space Grotesk', sans-serif; font-weight: 600; }.featured-description { color: #cbd5e1; }.event-details { border-color: #334155; }.event-details dt { color: #94a3b8; }.details-button { align-self: flex-start; }
 .agenda { padding: 4.5rem 0; }.section-heading h2, .featured-content h2 { color: #0f172a; font-family: 'Space Grotesk', sans-serif; font-weight: 600; }.featured-content h2 { color: #fff; }.section-heading a { border-color: #94a3b8; }
@@ -311,5 +311,29 @@ nav { gap: 1.35rem; } nav a, nav button, .section-heading a { color: #475569; fo
   .site-header {
     display: flex;
     justify-content: space-between;
+  }
+}
+
+.notices-page,
+.edital-page,
+.notice-documents-page,
+.reviewer-page,
+.artist-submissions-page,
+.review-page,
+.admin-page,
+.create-notice-page {
+  padding-top: 2rem;
+}
+
+@media (max-width: 800px) {
+  .notices-page,
+  .edital-page,
+  .notice-documents-page,
+  .reviewer-page,
+  .artist-submissions-page,
+  .review-page,
+  .admin-page,
+  .create-notice-page {
+    padding-top: 1.5rem;
   }
 }
